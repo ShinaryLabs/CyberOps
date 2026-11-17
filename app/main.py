@@ -585,11 +585,17 @@ async def branding_logo():
 
 @app.get("/screen/{screen}")
 async def screen(screen: str):
-    if screen not in ["threats", "soc", "crisis", "dashboard", "war-room", "about"]:
+    if screen not in [
+        "threats", "soc", "crisis", "dashboard", "war-room",
+        "infrastructure", "about"
+    ]:
         return {"error": "Unknown screen"}
 
     if screen == "war-room":
         return FileResponse(BASE / "static" / "war-room.html")
+
+    if screen == "infrastructure":
+        return FileResponse(BASE / "static" / "infrastructure.html")
 
     if screen == "about":
         return FileResponse(BASE / "static" / "about.html")

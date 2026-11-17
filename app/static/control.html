@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyber Crisis Room — Control</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080d17;color:#e8eef8;font-family:Arial,sans-serif}
+header{padding:24px 32px;border-bottom:1px solid #26344a;display:flex;justify-content:space-between;align-items:center}
+h1{font-size:23px;margin:0;letter-spacing:1px}
+.sub{color:#8191a9;font-size:12px;margin-top:7px}
+main{max-width:1300px;margin:30px auto;padding:0 24px}
+.panel{background:#111b2b;border:1px solid #26344a;border-radius:10px;padding:22px;margin-bottom:20px}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#9db0ca;margin:0 0 20px}
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+.scenario-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.scenario-toolbar select,.scenario-toolbar button{background:#0b1422;color:#e8eef8;border:1px solid #26344a;border-radius:6px;padding:11px 13px}
+.scenario-toolbar select{min-width:260px}
+.scenario-toolbar button{cursor:pointer}
+.scenario-toolbar button:hover{border-color:#38bdf8}
+.scenario-help{color:#8191a9;font-size:12px;margin-top:12px}
+button{border:0;border-radius:6px;padding:13px 22px;font-weight:bold;cursor:pointer;color:white}
+button:disabled{opacity:.35;cursor:not-allowed}
+.start{background:#087c63}.pause{background:#b7791f}.resume{background:#2563a6}.reset{background:#9b3443}
+.status{font-weight:bold;font-size:14px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#64748b;margin-right:9px}
+.running .dot{background:#22c55e;box-shadow:0 0 10px #22c55e}
+.paused .dot{background:#f59e0b}
+.completed .dot{background:#3b82f6}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.metric{background:#0b1422;padding:18px;border-radius:8px}
+.metric small{color:#8293ac;text-transform:uppercase;font-size:11px}
+.metric strong{display:block;font-size:30px;margin-top:10px}
+.progress{height:10px;background:#26344a;border-radius:10px;overflow:hidden;margin-top:12px}
+.bar{height:100%;width:0;background:#16a085;transition:width .4s}
+.event{display:grid;grid-template-columns:90px 100px 160px 1fr;gap:12px;padding:14px 4px;border-bottom:1px solid #26344a;font-size:13px;align-items:center}
+.event:last-child{border:0}
+.time{color:#8191a9;font-family:monospace}
+.sev{font-weight:bold}
+.CRITICAL{color:#fb7185}.HIGH{color:#fbbf24}.MEDIUM{color:#60a5fa}
+.source{color:#8ea5c5}
+.empty{color:#718198;padding:20px 0}
+footer{color:#65758c;text-align:center;padding:25px;font-size:11px}
+@media(max-width:750px){.metrics{grid-template-columns:repeat(2,1fr)}.event{grid-template-columns:75px 85px 1fr}.event .message{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>CYBER CRISIS ROOM</h1>
+    <div class="sub">CONSOLE DE PILOTAGE — EXERCICE DE SIMULATION</div>
+  </div>
+  <div id="status" class="status"><span class="dot"></span>INITIALISATION</div>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Scénario chargé</h2>
+    <div class="scenario-toolbar">
+      <select id="scenarioSelect" aria-label="Sélectionner un scénario"></select>
+      <button id="importScenario" type="button">Importer un JSON</button>
+      <button id="exportScenario" type="button">Exporter le scénario</button>
+      <input id="scenarioFile" type="file" accept="application/json,.json" hidden>
+    </div>
+    <div class="scenario-help" id="scenarioDescription">Chargement des scénarios...</div>
+  </section>
+
+  <section class="panel">
+    <h2>Commandement du scénario</h2>
+    <div class="actions">
+      <button class="start" id="start">▶ DÉMARRER</button>
+      <button class="pause" id="pause">Ⅱ PAUSE</button>
+      <button class="resume" id="resume">▶ REPRENDRE</button>
+      <button class="reset" id="reset">↺ RÉINITIALISER</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Situation opérationnelle</h2>
+    <div class="metrics">
+      <div class="metric"><small>Événements</small><strong id="total">0</strong></div>
+      <div class="metric"><small>Alertes critiques</small><strong id="critical">0</strong></div>
+      <div class="metric"><small>Systèmes concernés</small><strong id="systems">0</strong></div>
+      <div class="metric"><small>Étape du scénario</small><strong id="step">0/6</strong></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:24px;font-size:12px;color:#9aabc2">
+      <span>PROGRESSION DU SCÉNARIO</span><span id="percent">0 %</span>
+    </div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+  </section>
+
+
+  <section class="panel">
+    <h2>Impacts métier</h2>
+    <div id="controlImpacts">En attente des données...</div>
+  </section>
+
+  <section class="panel">
+    <h2>Décisions de la cellule de crise</h2>
+    <div id="controlDecisions">Aucune décision enregistrée.</div>
+  </section>
+
+  <section class="panel">
+    <h2>Chronologie des événements</h2>
+    <div id="timeline"><div class="empty">En attente du déclenchement du scénario.</div></div>
+  </section>
+</main>
+
+<footer>CYBER CRISIS ROOM · SIMULATION PÉDAGOGIQUE · DONNÉES FICTIVES</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+async function loadScenarios() {
+  const response = await fetch('/api/scenarios', {cache:'no-store'});
+  if (!response.ok) throw new Error('Impossible de charger les scénarios');
+
+  const data = await response.json();
+  const select = $('scenarioSelect');
+  select.innerHTML = data.items.map(item =>
+    `<option value="${item.id}">${item.name} · v${item.version}</option>`
+  ).join('');
+  select.value = data.active.id;
+  $('scenarioDescription').textContent =
+    `${data.active.description || 'Aucune description'} · ${data.active.event_count} événement(s)`;
+}
+
+async function selectScenario(id) {
+  const response = await fetch('/api/scenarios/select/' + encodeURIComponent(id), {
+    method:'POST'
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Impossible de sélectionner le scénario');
+  await refresh();
+  await loadScenarios();
+}
+
+async function importScenario(file) {
+  const scenario = JSON.parse(await file.text());
+  const response = await fetch('/api/scenarios/import', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(scenario)
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Import impossible');
+  await loadScenarios();
+  await refresh();
+}
+
+async function exportScenario() {
+  const id = $('scenarioSelect').value;
+  const response = await fetch('/api/scenarios/' + encodeURIComponent(id));
+  if (!response.ok) throw new Error('Export impossible');
+  const blob = await response.blob();
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = id + '.json';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+async function command(action) {
+  try {
+    const response = await fetch('/api/' + action, {method:'POST'});
+    if (!response.ok) throw new Error('Erreur HTTP ' + response.status);
+    await refresh();
+  } catch(e) {
+    alert('Commande impossible : ' + e.message);
+  }
+}
+
+$('start').onclick = () => command('start');
+$('pause').onclick = () => command('pause');
+$('resume').onclick = () => command('resume');
+$('reset').onclick = () => command('reset');
+$('scenarioSelect').onchange = event => selectScenario(event.target.value).catch(error => alert(error.message));
+$('importScenario').onclick = () => $('scenarioFile').click();
+$('scenarioFile').onchange = event => {
+  const [file] = event.target.files;
+  if (file) importScenario(file).catch(error => alert(error.message));
+  event.target.value = '';
+};
+$('exportScenario').onclick = () => exportScenario().catch(error => alert(error.message));
+
+function render(data) {
+  const status = data.status || (data.running ? 'running' : 'idle');
+  const labels = {
+    idle:'EN ATTENTE',
+    running:'SCÉNARIO EN COURS',
+    paused:'SCÉNARIO EN PAUSE',
+    completed:'SCÉNARIO TERMINÉ'
+  };
+
+  $('status').className = 'status ' + status;
+  $('status').innerHTML = '<span class="dot"></span>' + (labels[status] || status.toUpperCase());
+
+  $('start').disabled = status === 'running' || status === 'paused';
+  $('pause').disabled = status !== 'running';
+  $('resume').disabled = status !== 'paused';
+  $('reset').disabled = status === 'idle';
+
+  const total = data.total || 0;
+  const steps = data.scenario_total || 6;
+  const current = data.current_step || 0;
+  const percent = Math.round(current / steps * 100);
+
+  $('total').textContent = total;
+  $('critical').textContent = data.critical || 0;
+  $('systems').textContent = data.systems || 0;
+  $('step').textContent = current + '/' + steps;
+  $('percent').textContent = percent + ' %';
+  $('bar').style.width = percent + '%';
+
+  // Impacts métier
+  const impacts = data.impacts || [];
+  $('controlImpacts').innerHTML = impacts.length
+    ? impacts.map(i => `
+      <div class="event">
+        <strong>${i.service}</strong>
+        <span>${i.site}</span>
+        <span class="sev ${i.status === 'critical' || i.status === 'unavailable' ? 'CRITICAL' : i.status === 'degraded' ? 'HIGH' : 'MEDIUM'}">${i.status.toUpperCase()}</span>
+        <span>${i.detail}</span>
+      </div>
+    `).join('')
+    : 'Aucun impact déclaré.';
+
+  // Décisions
+  const decisions = data.decisions || [];
+  $('controlDecisions').innerHTML = decisions.length
+    ? decisions.map(d => `
+      <div class="event">
+        <span class="time">${d.timestamp}</span>
+        <span class="source">${d.actor}</span>
+        <span class="message">${d.label}</span>
+      </div>
+    `).join('')
+    : 'Aucune décision enregistrée.';
+
+  const events = data.events || [];
+  $('timeline').innerHTML = events.length ? events.map(e => `
+    <div class="event">
+      <span class="time">${e.received || e.time || '--:--:--'}</span>
+      <span class="sev ${e.severity}">${e.severity}</span>
+      <span class="source">${e.source}</span>
+      <span class="message">${e.event} <span style="color:#718198">· ${e.technique || ''}</span></span>
+    </div>
+  `).join('') : '<div class="empty">Aucun événement pour le moment.</div>';
+}
+
+async function refresh() {
+  try {
+    const response = await fetch('/api/state', {cache:'no-store'});
+    if (!response.ok) throw new Error('API indisponible');
+    render(await response.json());
+  } catch(e) {
+    $('status').innerHTML = '<span class="dot"></span>CONNEXION API PERDUE';
+  }
+}
+
+loadScenarios().catch(error => {
+  $('scenarioDescription').textContent = error.message;
+});
+refresh();
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>

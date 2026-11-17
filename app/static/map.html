@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Threat Map</title>
+
+<link rel="stylesheet"
+ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    height: 100%;
+    background: #080d17;
+    color: #e5e7eb;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+:root {
+    --sidebar-width:250px;
+    --sidebar-collapsed-width:65px;
+}
+
+body.sidebar-collapsed {
+    --sidebar-width:var(--sidebar-collapsed-width);
+}
+
+body.embedded {
+    --sidebar-width:0px;
+}
+
+body.embedded.sidebar-collapsed {
+    --sidebar-width:0px;
+}
+
+body.embedded .app-sidebar {
+    display:none;
+}
+
+#map {
+    position: absolute;
+    top:0;
+    right:0;
+    bottom:0;
+    left:var(--sidebar-width);
+    background: #080d17;
+}
+
+.leaflet-container {
+    background: #080d17;
+}
+
+.leaflet-tile {
+    filter: brightness(.55) invert(1) contrast(2)
+            hue-rotate(180deg) saturate(.35) brightness(.65);
+}
+
+.header {
+    position: absolute;
+    z-index: 1000;
+    top: 15px;
+    left: calc(var(--sidebar-width) + 15px);
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    pointer-events: none;
+}
+
+.panel {
+    background: rgba(10, 18, 32, .94);
+    border: 1px solid #26354b;
+    border-radius: 8px;
+    padding: 13px 17px;
+    box-shadow: 0 8px 30px #0008;
+}
+
+.title {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+}
+
+.subtitle {
+    color: #8293aa;
+    font-size: 11px;
+    margin-top: 5px;
+}
+
+.status {
+    color: #fb7185;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.stats {
+    display: flex;
+    gap: 22px;
+}
+
+.stat-value {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 10px;
+    color: #8293aa;
+    text-transform: uppercase;
+    margin-top: 3px;
+}
+
+.map-panel {
+    position: absolute;
+    z-index: 1000;
+    top: 100px;
+    right: 15px;
+    width: 290px;
+    max-height: calc(100% - 120px);
+    overflow-y: auto;
+}
+
+.app-sidebar {
+    position:fixed;
+    top:0;
+    left:0;
+    bottom:0;
+    width:var(--sidebar-width);
+    background:#0b1422;
+    border-right:1px solid #26354b;
+    display:flex;
+    flex-direction:column;
+    z-index:1100;
+    color:#e5edf7;
+}
+
+.brand {
+    height:76px;
+    display:flex;
+    align-items:center;
+    padding:0 23px;
+    border-bottom:1px solid #26354b;
+    font-size:16px;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    white-space:nowrap;
+}
+
+.brand-link {
+    display:flex;
+    align-items:center;
+    min-width:0;
+    color:#e5edf7;
+    text-decoration:none;
+}
+
+.brand-symbol {
+    width:48px;
+    height:48px;
+    display:block;
+    object-fit:contain;
+    margin-right:9px;
+}
+
+.brand-name {
+    min-width:0;
+    line-height:1.15;
+    font-size:13px;
+    letter-spacing:1px;
+}
+
+.brand-name span {
+    color:#38bdf8;
+}
+
+.sidebar-toggle {
+    margin-left:auto;
+    width:28px;
+    height:28px;
+    padding:0;
+    border:1px solid #26354b;
+    border-radius:4px;
+    background:transparent;
+    color:#8799b1;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.sidebar-toggle:hover {
+    color:#e5edf7;
+    border-color:#38bdf8;
+}
+
+.sidebar-content {
+    padding:23px 13px;
+    flex:1;
+    overflow-y:auto;
+}
+
+.nav-section {
+    color:#63758d;
+    font-size:10px;
+    font-weight:bold;
+    letter-spacing:1.5px;
+    padding:12px 11px 9px;
+}
+
+.nav-link {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px 11px;
+    margin:3px 0;
+    color:#9aabc0;
+    text-decoration:none;
+    border:1px solid transparent;
+    border-radius:5px;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.nav-link:hover {
+    background:#14243a;
+    color:white;
+}
+
+.nav-link.active {
+    background:#122b43;
+    border-color:#24506c;
+    color:#38bdf8;
+}
+
+.nav-icon {
+    width:19px;
+    text-align:center;
+    font-size:16px;
+}
+
+.nav-number {
+    margin-left:auto;
+    color:#61758d;
+    font-size:9px;
+}
+
+.sidebar-bottom {
+    border-top:1px solid #26354b;
+    padding:17px 19px;
+}
+
+.system-status {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#22c55e;
+    font-size:10px;
+    font-weight:bold;
+}
+
+.sidebar-status-row {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+}
+
+.control-link {
+    color:#8799b1;
+    text-decoration:none;
+    font-size:9px;
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+.control-link:hover {
+    color:#38bdf8;
+}
+
+.status-dot {
+    width:7px;
+    height:7px;
+    background:#22c55e;
+    border-radius:50%;
+    box-shadow:0 0 8px #22c55e;
+}
+
+.sidebar-version {
+    color:#64758c;
+    font-size:9px;
+    margin-top:9px;
+}
+
+body.sidebar-collapsed .brand {
+    justify-content:center;
+    padding:0;
+    font-size:0;
+}
+
+body.sidebar-collapsed .brand-symbol {
+    margin:0;
+}
+
+body.sidebar-collapsed .brand-name {
+    display:none;
+}
+
+body.sidebar-collapsed .sidebar-toggle {
+    position:absolute;
+    top:76px;
+    right:-15px;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:#0b1422;
+}
+
+body.sidebar-collapsed .sidebar-content {
+    padding:15px 7px;
+}
+
+body.sidebar-collapsed .nav-section {
+    font-size:0;
+    height:12px;
+    padding:5px;
+}
+
+body.sidebar-collapsed .nav-link {
+    justify-content:center;
+    padding:12px 5px;
+}
+
+body.sidebar-collapsed .nav-link .nav-text,
+body.sidebar-collapsed .nav-number,
+body.sidebar-collapsed .sidebar-bottom .status-text,
+body.sidebar-collapsed .sidebar-version {
+    display:none;
+}
+
+body.sidebar-collapsed .sidebar-status-row {
+    justify-content:center;
+}
+
+body.sidebar-collapsed .control-label {
+    display:none;
+}
+
+body.sidebar-collapsed .sidebar-bottom {
+    padding:17px 0;
+    display:flex;
+    justify-content:center;
+}
+
+.section-title {
+    color: #8293aa;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+}
+
+.target {
+    padding: 10px 0;
+    border-bottom: 1px solid #26354b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.target small {
+    color: #8293aa;
+    display: block;
+    margin-top: 4px;
+}
+
+.target-state {
+    font-size: 10px;
+    color: #34d399;
+}
+
+.target-state.alert {
+    color: #fb7185;
+}
+
+.incident {
+    padding: 11px 0;
+    border-bottom: 1px solid #26354b;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.incident:hover {
+    background: #1b293d;
+}
+
+.incident strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.incident small {
+    color: #8293aa;
+}
+
+.critical {
+    color: #fb7185;
+}
+
+.high {
+    color: #fbbf24;
+}
+
+.legend {
+    position: absolute;
+    z-index: 1000;
+    bottom: 20px;
+    left: 15px;
+    min-width: 210px;
+}
+
+.legend-line {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 8px 0;
+    font-size: 11px;
+    color: #b8c5d6;
+}
+
+.dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot.red { background: #fb4565; }
+.dot.orange { background: #f59e0b; }
+.dot.blue { background: #38bdf8; }
+.dot.green { background: #34d399; }
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    background: #101b2c;
+    color: #e5e7eb;
+}
+
+.leaflet-popup-content {
+    font-size: 12px;
+}
+
+.leaflet-control-zoom a {
+    background: #101b2c !important;
+    color: white !important;
+    border-color: #26354b !important;
+}
+
+@media(max-width: 750px) {
+    .stats { gap: 10px; }
+    .stat-value { font-size: 17px; }
+}
+
+@media(max-width: 850px) {
+    :root { --sidebar-width:65px; }
+}
+</style>
+</head>
+
+<body>
+
+<script>
+if (window.self !== window.top) {
+    document.body.classList.add('embedded');
+}
+</script>
+
+<aside class="app-sidebar">
+    <div class="brand">
+        <a class="brand-link" href="https://shinary.fr" target="_blank" rel="noopener noreferrer" aria-label="SHINARY - CYBEROPS">
+            <span class="brand-name"><span>SHINARY</span> - CYBEROPS</span>
+        </a>
+        <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Réduire le menu" aria-expanded="true">‹</button>
+    </div>
+
+    <div class="sidebar-content">
+        <div class="nav-section">MONITORING</div>
+        <a href="/screen/threats" class="nav-link">
+            <span class="nav-icon">◈</span>
+            <span class="nav-text">Threat Intelligence</span>
+            <span class="nav-number">01</span>
+        </a>
+        <a href="/static/map.html" class="nav-link active">
+            <span class="nav-icon">◎</span>
+            <span class="nav-text">Carte mondiale</span>
+            <span class="nav-number">02</span>
+        </a>
+        <a href="/screen/soc" class="nav-link">
+            <span class="nav-icon">▦</span>
+            <span class="nav-text">SOC Monitoring</span>
+            <span class="nav-number">03</span>
+        </a>
+        <a href="/screen/dashboard" class="nav-link">
+            <span class="nav-icon">▥</span>
+            <span class="nav-text">Operations Dashboard</span>
+            <span class="nav-number">04</span>
+        </a>
+        <div class="nav-section">GESTION DE CRISE</div>
+        <a href="/screen/crisis" class="nav-link">
+            <span class="nav-icon">⚑</span>
+            <span class="nav-text">Crisis Management</span>
+            <span class="nav-number">05</span>
+        </a>
+        <a href="/screen/war-room" class="nav-link">
+            <span class="nav-icon">▣</span>
+            <span class="nav-text">Table de crise</span>
+            <span class="nav-number">06</span>
+        </a>
+        <div class="nav-section">INFORMATIONS</div>
+        <a href="/screen/about" class="nav-link">
+            <span class="nav-icon">ⓘ</span>
+            <span class="nav-text">À propos</span>
+            <span class="nav-number">07</span>
+        </a>
+    </div>
+
+    <div class="sidebar-bottom">
+        <div>
+            <div class="sidebar-status-row">
+                <div class="system-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">SYSTEM ONLINE</span>
+                </div>
+                <a class="control-link" href="/control" title="Ouvrir le centre de contrôle">
+                    ⚙ <span class="control-label">CONTROL</span>
+                </a>
+            </div>
+            <div class="sidebar-version">CYBER CRISIS ROOM · v1.0</div>
+        </div>
+    </div>
+</aside>
+
+<div id="map"></div>
+
+<div class="header">
+    <div class="panel">
+        <div class="title">GLOBAL CYBER THREAT MAP</div>
+        <div class="subtitle">THREAT INTELLIGENCE · LIVE SIMULATION</div>
+    </div>
+
+    <div class="panel stats">
+        <div>
+            <div class="stat-value critical" id="statCritical">0</div>
+            <div class="stat-label">Critiques</div>
+        </div>
+        <div>
+            <div class="stat-value" id="statEvents">0</div>
+            <div class="stat-label">Événements</div>
+        </div>
+        <div>
+            <div class="stat-value" id="statTargets">2</div>
+            <div class="stat-label">Sites ciblés</div>
+        </div>
+    </div>
+
+    <div class="panel status" id="connectionStatus">
+        ● INITIALISATION
+    </div>
+</div>
+
+<div class="map-panel panel">
+    <div class="section-title">INFRASTRUCTURES SURVEILLÉES</div>
+
+    <div class="target">
+        <div>Bordeaux<small>Site principal · Nouvelle-Aquitaine</small></div>
+        <span class="target-state" id="bordeauxState">NORMAL</span>
+    </div>
+
+    <div class="target">
+        <div>Lyon<small>Site secondaire · Auvergne-Rhône-Alpes</small></div>
+        <span class="target-state" id="lyonState">NORMAL</span>
+    </div>
+
+    <div style="height:20px"></div>
+
+    <div class="section-title">FLUX DE MENACES</div>
+    <div id="incidentList">
+        <div class="subtitle">En attente des événements du scénario...</div>
+    </div>
+</div>
+
+<div class="legend panel">
+    <div class="section-title">LÉGENDE</div>
+    <div class="legend-line"><span class="dot red"></span> Menace critique</div>
+    <div class="legend-line"><span class="dot orange"></span> Menace élevée</div>
+    <div class="legend-line"><span class="dot blue"></span> Infrastructure ciblée</div>
+    <div class="legend-line"><span class="dot green"></span> Infrastructure surveillée</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const map = L.map('map', {
+    zoomControl: true,
+    worldCopyJump: true
+}).setView([35, 15], 3);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18
+}).addTo(map);
+
+// Sites de l'entreprise
+const targets = {
+    bordeaux: {
+        name: "Bordeaux",
+        coords: [44.8378, -0.5792]
+    },
+    lyon: {
+        name: "Lyon",
+        coords: [45.7640, 4.8357]
+    }
+};
+
+// Sources fictives destinées à la démonstration.
+// Elles ne représentent pas des origines d'attaque réellement attribuées.
+const origins = [
+    {name: "Amérique du Nord", coords: [40.7128, -74.0060]},
+    {name: "Europe de l'Est", coords: [52.2297, 21.0122]},
+    {name: "Asie de l'Est", coords: [35.6762, 139.6503]},
+    {name: "Europe du Nord", coords: [59.3293, 18.0686]},
+    {name: "Asie du Sud-Est", coords: [1.3521, 103.8198]},
+    {name: "Europe centrale", coords: [50.1109, 8.6821]}
+];
+
+const siteMarkers = {};
+
+function makeIcon(color) {
+    return L.divIcon({
+        className: '',
+        html: `<div style="
+            width:16px;height:16px;
+            background:${color};
+            border:3px solid white;
+            border-radius:50%;
+            box-shadow:0 0 14px ${color};
+        "></div>`,
+        iconSize: [16,16],
+        iconAnchor: [8,8]
+    });
+}
+
+Object.entries(targets).forEach(([key, site]) => {
+    siteMarkers[key] = L.marker(site.coords, {
+        icon: makeIcon('#38bdf8')
+    }).addTo(map);
+
+    siteMarkers[key].bindPopup(
+        `<b>${site.name}</b><br>Infrastructure surveillée`
+    );
+});
+
+// Marqueurs des origines simulées
+const originMarkers = origins.map((origin, i) => {
+    const marker = L.circleMarker(origin.coords, {
+        radius: 5,
+        color: '#fb4565',
+        fillColor: '#fb4565',
+        fillOpacity: .8,
+        weight: 1
+    }).addTo(map);
+
+    marker.bindPopup(
+        `<b>${origin.name}</b><br>Point d'origine simulé`
+    );
+
+    return marker;
+});
+
+const drawnEvents = new Set();
+const incidentLines = [];
+let previousState = null;
+
+function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
+}
+
+function getTarget(event) {
+    const text = (
+        (event.asset || '') + ' ' +
+        (event.description || '') + ' ' +
+        (event.title || '')
+    ).toLowerCase();
+
+    if (text.includes('erp') || text.includes('lyon')) {
+        return 'lyon';
+    }
+
+    return 'bordeaux';
+}
+
+function addAttack(event, index) {
+    if (drawnEvents.has(index)) return;
+    drawnEvents.add(index);
+
+    const targetKey = getTarget(event);
+    const target = targets[targetKey];
+    const origin = origins[index % origins.length];
+
+    const isCritical = String(event.severity || '').toUpperCase() === 'CRITICAL';
+    const color = isCritical ? '#fb4565' : '#f59e0b';
+
+    // Trajectoire entre le point simulé et le site cible
+    const line = L.polyline(
+        [origin.coords, target.coords],
+        {
+            color: color,
+            weight: 2,
+            opacity: .8,
+            dashArray: '7 9'
+        }
+    ).addTo(map);
+
+    incidentLines.push(line);
+
+    // Animation du déplacement du signal
+    const pulse = L.circleMarker(origin.coords, {
+        radius: 7,
+        color: color,
+        fillColor: color,
+        fillOpacity: .9,
+        weight: 2
+    }).addTo(map);
+
+    let progress = 0;
+    const start = origin.coords;
+    const end = target.coords;
+
+    const timer = setInterval(() => {
+        progress += .025;
+
+        if (progress >= 1) {
+            progress = 1;
+            clearInterval(timer);
+        }
+
+        const lat = start[0] + (end[0] - start[0]) * progress;
+        const lng = start[1] + (end[1] - start[1]) * progress;
+
+        pulse.setLatLng([lat, lng]);
+
+        if (progress === 1) {
+            pulse.bindPopup(
+                `<b>${escapeHTML(event.asset || 'Incident')}</b><br>
+                 ${escapeHTML(event.description || '')}`
+            ).openPopup();
+        }
+    }, 50);
+
+    L.circleMarker(target.coords, {
+        radius: 10,
+        color: color,
+        fillColor: color,
+        fillOpacity: .2,
+        weight: 2
+    }).addTo(map);
+
+    // Popup sur la trajectoire
+    line.bindPopup(`
+        <b>${escapeHTML(event.asset || 'Incident')}</b><br>
+        Origine : ${escapeHTML(origin.name)} (simulée)<br>
+        Cible : ${escapeHTML(target.name)}<br>
+        Gravité : ${escapeHTML(event.severity || 'N/A')}<br>
+        Technique : ${escapeHTML(event.technique || 'N/A')}
+    `);
+}
+
+function updateIncidents(events) {
+    const list = document.getElementById('incidentList');
+
+    if (!events || events.length === 0) {
+        list.innerHTML = '<div class="subtitle">En attente des événements...</div>';
+        return;
+    }
+
+    list.innerHTML = [...events].reverse().map(event => {
+        const severity = String(event.severity || '').toUpperCase();
+        const cls = severity === 'CRITICAL' ? 'critical' : 'high';
+
+        return `
+            <div class="incident">
+                <strong>${escapeHTML(event.asset || 'Système')} 
+                <span class="${cls}">${escapeHTML(severity)}</span></strong>
+                ${escapeHTML(event.description || event.title || '')}
+                <br>
+                <small>
+                    ${escapeHTML(event.time || '')}
+                    · ${escapeHTML(event.technique || '')}
+                </small>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateSites(state) {
+    const impacts = state.impacts || [];
+
+    const bordeaux = impacts.filter(x =>
+        String(x.location || '').toLowerCase().includes('bordeaux')
+    );
+
+    const lyon = impacts.filter(x =>
+        String(x.location || '').toLowerCase().includes('lyon')
+    );
+
+    function statusFor(items) {
+        if (!items.length) return 'NORMAL';
+
+        const values = items.map(x =>
+            String(x.status || '').toLowerCase()
+        );
+
+        if (values.some(x => x.includes('unavailable') || x.includes('indisponible'))) {
+            return 'INDISPONIBLE';
+        }
+        if (values.some(x => x.includes('critical') || x.includes('critique'))) {
+            return 'CRITIQUE';
+        }
+        if (values.some(x => x.includes('degraded') || x.includes('dégradé'))) {
+            return 'DÉGRADÉ';
+        }
+        if (values.some(x => x.includes('contained') || x.includes('isolé'))) {
+            return 'CONTENU';
+        }
+
+        return 'SURVEILLÉ';
+    }
+
+    const b = statusFor(bordeaux);
+    const l = statusFor(lyon);
+
+    document.getElementById('bordeauxState').textContent = b;
+    document.getElementById('lyonState').textContent = l;
+
+    document.getElementById('bordeauxState').className =
+        'target-state' + (b !== 'NORMAL' && b !== 'SURVEILLÉ' ? ' alert' : '');
+
+    document.getElementById('lyonState').className =
+        'target-state' + (l !== 'NORMAL' && l !== 'SURVEILLÉ' ? ' alert' : '');
+}
+
+async function refresh() {
+    try {
+        const response = await fetch('/api/state', {cache: 'no-store'});
+        if (!response.ok) throw new Error('API indisponible');
+
+        const state = await response.json();
+
+        document.getElementById('connectionStatus').textContent =
+            '● API CONNECTÉE';
+
+        const events = state.events || [];
+
+        document.getElementById('statEvents').textContent =
+            events.length;
+
+        document.getElementById('statCritical').textContent =
+            state.critical ?? events.filter(e =>
+                String(e.severity).toUpperCase() === 'CRITICAL'
+            ).length;
+
+        updateIncidents(events);
+        updateSites(state);
+
+        // N'ajouter que les événements nouvellement reçus
+        events.forEach((event, index) => addAttack(event, index));
+
+        // Zoom sur la France dès que le scénario commence
+        if (events.length > 0 && (!previousState || previousState.events.length === 0)) {
+            map.flyTo([46.5, 2.5], 5, {duration: 2});
+        }
+
+        previousState = state;
+
+    } catch (error) {
+        document.getElementById('connectionStatus').textContent =
+            '● API DÉCONNECTÉE';
+    }
+}
+
+refresh();
+setInterval(refresh, 1500);
+
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const storedSidebarState = localStorage.getItem('cyber-ops-sidebar-collapsed');
+const sidebarCollapsed = storedSidebarState === null
+    ? window.matchMedia('(max-width: 850px)').matches
+    : storedSidebarState === 'true';
+
+function setSidebarCollapsed(collapsed) {
+    document.body.classList.toggle('sidebar-collapsed', collapsed);
+    map.invalidateSize();
+    sidebarToggle.textContent = collapsed ? '›' : '‹';
+    sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+    sidebarToggle.setAttribute(
+        'aria-label',
+        collapsed ? 'Développer le menu' : 'Réduire le menu'
+    );
+    localStorage.setItem('cyber-ops-sidebar-collapsed', String(collapsed));
+}
+
+setSidebarCollapsed(sidebarCollapsed);
+sidebarToggle.addEventListener('click', () => {
+    setSidebarCollapsed(!document.body.classList.contains('sidebar-collapsed'));
+});
+</script>
+
+</body>
+</html>

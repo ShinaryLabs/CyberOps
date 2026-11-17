@@ -1,0 +1,309 @@
+{
+  "schema_version": 1,
+  "id": "cloud-supply-chain",
+  "name": "Compromission cloud et chaîne logicielle",
+  "version": "1.0",
+  "entity": "INDUSTRIA GROUP",
+  "description": "Scénario de démonstration d'une compromission d'un fournisseur cloud et d'une chaîne CI/CD.",
+  "step_delay": 6,
+  "events": [
+    {
+      "time": "10:02:11",
+      "severity": "HIGH",
+      "source": "VPN-VENDOR",
+      "event": "Connexion fournisseur depuis une localisation inhabituelle",
+      "technique": "T1199",
+      "type": "Initial Access"
+    },
+    {
+      "time": "10:06:27",
+      "severity": "CRITICAL",
+      "source": "CLOUD-IAM",
+      "event": "Connexion impossible travel sur un compte privilégié",
+      "technique": "T1078.004",
+      "type": "Valid Accounts"
+    },
+    {
+      "time": "10:11:43",
+      "severity": "HIGH",
+      "source": "CLOUD-IAM",
+      "event": "Application OAuth non approuvée autorisée",
+      "technique": "T1098.003",
+      "type": "Persistence"
+    },
+    {
+      "time": "10:18:09",
+      "severity": "CRITICAL",
+      "source": "CI-RUNNER-03",
+      "event": "Lecture de secrets depuis le pipeline de build",
+      "technique": "T1552.001",
+      "type": "Credential Access"
+    },
+    {
+      "time": "10:24:52",
+      "severity": "CRITICAL",
+      "source": "CONTAINER-REGISTRY",
+      "event": "Image applicative modifiée avant publication",
+      "technique": "T1608.001",
+      "type": "Resource Development"
+    },
+    {
+      "time": "10:31:16",
+      "severity": "HIGH",
+      "source": "DATA-LAKE",
+      "event": "Accès massif aux données analytiques",
+      "technique": "T1530",
+      "type": "Collection"
+    },
+    {
+      "time": "10:39:40",
+      "severity": "CRITICAL",
+      "source": "CUSTOMER-PORTAL",
+      "event": "Dégradation du portail client après déploiement",
+      "technique": "T1499",
+      "type": "Impact"
+    },
+    {
+      "time": "10:45:00",
+      "severity": "CRITICAL",
+      "source": "SOC",
+      "event": "Activation de la cellule de crise cloud",
+      "technique": "IR",
+      "type": "Response"
+    }
+  ],
+  "impacts": [
+    {
+      "id": "vendor",
+      "service": "Accès fournisseur",
+      "site": "Environnement cloud",
+      "status": "operational",
+      "detail": "Accès distant sous surveillance"
+    },
+    {
+      "id": "iam",
+      "service": "Identités cloud",
+      "site": "Global",
+      "status": "operational",
+      "detail": "Aucune anomalie confirmée"
+    },
+    {
+      "id": "devops",
+      "service": "Chaîne CI/CD",
+      "site": "Région Europe",
+      "status": "operational",
+      "detail": "Pipelines disponibles"
+    },
+    {
+      "id": "registry",
+      "service": "Registre de conteneurs",
+      "site": "Région Europe",
+      "status": "operational",
+      "detail": "Images validées"
+    },
+    {
+      "id": "data",
+      "service": "Data lake analytique",
+      "site": "Région Europe",
+      "status": "operational",
+      "detail": "Données accessibles"
+    },
+    {
+      "id": "portal",
+      "service": "Portail client",
+      "site": "Internet",
+      "status": "operational",
+      "detail": "Service nominal"
+    }
+  ],
+  "impact_updates": [
+    {
+      "step": 1,
+      "impact_id": "vendor",
+      "status": "investigation",
+      "detail": "Accès fournisseur inhabituel en cours d'analyse"
+    },
+    {
+      "step": 2,
+      "impact_id": "iam",
+      "status": "critical",
+      "detail": "Compte cloud privilégié suspect"
+    },
+    {
+      "step": 3,
+      "impact_id": "iam",
+      "status": "degraded",
+      "detail": "Application OAuth non approuvée détectée"
+    },
+    {
+      "step": 4,
+      "impact_id": "devops",
+      "status": "critical",
+      "detail": "Secrets de build potentiellement exposés"
+    },
+    {
+      "step": 5,
+      "impact_id": "registry",
+      "status": "critical",
+      "detail": "Intégrité d'une image applicative compromise"
+    },
+    {
+      "step": 6,
+      "impact_id": "data",
+      "status": "degraded",
+      "detail": "Accès massif aux données analytiques détecté"
+    },
+    {
+      "step": 7,
+      "impact_id": "portal",
+      "status": "unavailable",
+      "detail": "Portail client indisponible après déploiement"
+    },
+    {
+      "step": 1,
+      "when_action": "revoke_vendor_access",
+      "impact_id": "vendor",
+      "status": "contained",
+      "detail": "Accès fournisseur révoqué par la cellule de crise"
+    },
+    {
+      "step": 2,
+      "when_action": "revoke_oauth_tokens",
+      "impact_id": "iam",
+      "status": "contained",
+      "detail": "Jetons OAuth révoqués et sessions cloud invalidées"
+    },
+    {
+      "step": 4,
+      "when_action": "rotate_secrets",
+      "impact_id": "devops",
+      "status": "contained",
+      "detail": "Secrets CI/CD renouvelés et accès historiques retirés"
+    },
+    {
+      "step": 5,
+      "when_action": "isolate_pipeline",
+      "impact_id": "registry",
+      "status": "contained",
+      "detail": "Publication suspendue, images soumises à une validation renforcée"
+    },
+    {
+      "step": 7,
+      "when_action": "restore_clean_images",
+      "impact_id": "portal",
+      "status": "recovering",
+      "detail": "Déploiement d'une image vérifiée en cours"
+    },
+    {
+      "step": 7,
+      "when_action": "activate_communication",
+      "impact_id": "portal",
+      "status": "degraded",
+      "detail": "Communication client activée pendant le retour au service"
+    }
+  ],
+  "decisions": {
+    "revoke_vendor_access": {
+      "label": "Révoquer l'accès du fournisseur",
+      "response_key": "vendor_access_revoked",
+      "consequence": "Les accès du fournisseur sont suspendus pour contenir l'intrusion.",
+      "impact_updates": [
+        {
+          "impact_id": "vendor",
+          "status": "contained",
+          "detail": "Accès fournisseur révoqué par la cellule de crise"
+        }
+      ]
+    },
+    "revoke_oauth_tokens": {
+      "label": "Révoquer les jetons OAuth suspects",
+      "response_key": "oauth_tokens_revoked",
+      "consequence": "Les jetons OAuth suspects sont révoqués.",
+      "impact_updates": [
+        {
+          "impact_id": "iam",
+          "status": "contained",
+          "detail": "Jetons OAuth révoqués et sessions cloud invalidées"
+        }
+      ]
+    },
+    "rotate_secrets": {
+      "label": "Renouveler les secrets CI/CD",
+      "response_key": "secrets_rotated",
+      "consequence": "Les secrets de la chaîne CI/CD sont renouvelés.",
+      "impact_updates": [
+        {
+          "impact_id": "devops",
+          "status": "contained",
+          "detail": "Secrets CI/CD renouvelés et accès historiques retirés"
+        }
+      ]
+    },
+    "isolate_pipeline": {
+      "label": "Suspendre la publication des images",
+      "response_key": "pipeline_isolated",
+      "consequence": "La publication est suspendue le temps de vérifier les artefacts.",
+      "impact_updates": [
+        {
+          "impact_id": "registry",
+          "status": "contained",
+          "detail": "Publication suspendue, images soumises à une validation renforcée"
+        }
+      ]
+    },
+    "activate_communication": {
+      "label": "Activer la communication clients",
+      "response_key": "communication_activated",
+      "consequence": "La communication de crise vers les clients est activée.",
+      "impact_updates": [
+        {
+          "impact_id": "portal",
+          "status": "degraded",
+          "detail": "Communication client activée pendant le retour au service"
+        }
+      ]
+    },
+    "restore_clean_images": {
+      "label": "Redéployer une image vérifiée",
+      "response_key": "clean_images_deployed",
+      "consequence": "Le redéploiement d'une image vérifiée est lancé.",
+      "impact_updates": [
+        {
+          "min_step": 7,
+          "impact_id": "portal",
+          "status": "recovering",
+          "detail": "Déploiement d'une image vérifiée en cours"
+        }
+      ]
+    }
+  },
+  "event_overrides": [
+    {
+      "step": 1,
+      "when_action": "revoke_vendor_access",
+      "event": {
+        "severity": "MEDIUM",
+        "event": "Connexion fournisseur bloquée par la révocation d'accès",
+        "type": "Containment"
+      }
+    },
+    {
+      "step": 5,
+      "when_action": "isolate_pipeline",
+      "event": {
+        "severity": "HIGH",
+        "event": "Publication d'image suspendue avant diffusion",
+        "type": "Containment"
+      }
+    },
+    {
+      "step": 7,
+      "when_action": "restore_clean_images",
+      "event": {
+        "severity": "HIGH",
+        "event": "Déploiement d'une image vérifiée sur le portail",
+        "type": "Recovery"
+      }
+    }
+  ]
+}

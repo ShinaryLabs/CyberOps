@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHINARY - CYBEROPS · Operations Dashboard</title>
+<style>
+:root {
+  --bg:#080e19; --sidebar:#0b1422; --panel:#111c2c; --panel2:#14243a;
+  --border:#26364b; --text:#e5edf7; --muted:#8799b1; --cyan:#38bdf8;
+  --red:#ef4444; --orange:#f59e0b; --green:#22c55e; --purple:#a78bfa;
+  --sidebar-width:250px; --sidebar-collapsed-width:65px;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:12px Arial,Helvetica,sans-serif; }
+body.sidebar-collapsed { --sidebar-width:var(--sidebar-collapsed-width); }
+.sidebar {
+  position:fixed; inset:0 auto 0 0; width:var(--sidebar-width); background:var(--sidebar);
+  border-right:1px solid var(--border); display:flex; flex-direction:column; z-index:10;
+}
+.brand { height:76px; display:flex; align-items:center; padding:0 23px; border-bottom:1px solid var(--border); white-space:nowrap; }
+.brand-link { display:flex; align-items:center; min-width:0; color:var(--text); text-decoration:none; font-weight:bold; letter-spacing:1.5px; }
+.brand-symbol { width:48px; height:48px; object-fit:contain; margin-right:9px; }
+.brand-name { min-width:0; line-height:1.15; font-size:13px; letter-spacing:1px; }
+.brand-name span { color:var(--cyan); }
+.sidebar-toggle { margin-left:auto; width:28px; height:28px; padding:0; border:1px solid var(--border); border-radius:4px; background:transparent; color:var(--muted); cursor:pointer; font-size:16px; }
+.sidebar-toggle:hover { color:var(--text); border-color:var(--cyan); }
+.sidebar-content { padding:23px 13px; flex:1; overflow-y:auto; }
+.nav-section { color:#63758d; font-size:10px; font-weight:bold; letter-spacing:1.5px; padding:12px 11px 9px; }
+.nav-link { display:flex; align-items:center; gap:12px; padding:12px 11px; margin:3px 0; color:#9aabc0; text-decoration:none; border:1px solid transparent; border-radius:5px; font-size:12px; font-weight:bold; }
+.nav-link:hover { background:#14243a; color:white; }
+.nav-link.active { background:#122b43; border-color:#24506c; color:var(--cyan); }
+.nav-icon { width:19px; text-align:center; font-size:16px; }
+.nav-number { margin-left:auto; color:#61758d; font-size:9px; }
+.sidebar-bottom { border-top:1px solid var(--border); padding:17px 19px; }
+.system-status { display:flex; align-items:center; gap:8px; color:var(--green); font-size:10px; font-weight:bold; }
+.sidebar-status-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.control-link { color:var(--muted); text-decoration:none; font-size:9px; font-weight:bold; white-space:nowrap; }
+.control-link:hover { color:var(--cyan); }
+.status-dot { width:7px; height:7px; background:var(--green); border-radius:50%; box-shadow:0 0 8px var(--green); }
+.sidebar-version { color:#64758c; font-size:9px; margin-top:9px; }
+.credit { color:var(--muted); text-decoration:none; }
+.credit:hover { color:var(--cyan); }
+body.sidebar-collapsed .brand { justify-content:center; padding:0; }
+body.sidebar-collapsed .brand-name { display:none; }
+body.sidebar-collapsed .brand-symbol { margin:0; }
+body.sidebar-collapsed .sidebar-toggle { position:absolute; top:76px; right:-15px; width:30px; height:30px; border-radius:50%; background:var(--sidebar); }
+body.sidebar-collapsed .sidebar-content { padding:15px 7px; }
+body.sidebar-collapsed .nav-section { font-size:0; height:12px; padding:5px; }
+body.sidebar-collapsed .nav-link { justify-content:center; padding:12px 5px; }
+body.sidebar-collapsed .nav-text, body.sidebar-collapsed .nav-number, body.sidebar-collapsed .status-text, body.sidebar-collapsed .sidebar-version { display:none; }
+body.sidebar-collapsed .sidebar-bottom { padding:17px 0; display:flex; justify-content:center; }
+body.sidebar-collapsed .sidebar-status-row { justify-content:center; }
+body.sidebar-collapsed .control-label { display:none; }
+.shell { margin-left:var(--sidebar-width); min-height:100vh; }
+.connection { color:var(--green); font-size:10px; font-weight:bold; }
+main { padding:25px 28px 30px; max-width:1900px; margin:0 auto; }
+.page-heading { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:22px; }
+.page-status { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+h1 { margin:0 0 6px; font-size:23px; letter-spacing:.3px; }
+.subtitle { color:var(--muted); font-size:11px; letter-spacing:1px; }
+.time-range { color:var(--muted); font-size:10px; border:1px solid var(--border); padding:8px 11px; border-radius:4px; }
+.grid { display:grid; gap:14px; }
+.kpis { grid-template-columns:repeat(4,1fr); margin-bottom:14px; }
+.panel { background:var(--panel); border:1px solid var(--border); border-radius:5px; padding:17px; }
+.kpi-label, .panel-label { color:var(--muted); font-size:10px; letter-spacing:1px; text-transform:uppercase; }
+.kpi-value { margin-top:10px; font-size:28px; font-weight:bold; }
+.cyan { color:var(--cyan); } .red { color:var(--red); } .orange { color:var(--orange); } .green { color:var(--green); } .purple { color:var(--purple); }
+.kpi-meta { color:var(--muted); margin-top:6px; font-size:10px; }
+.content-grid { grid-template-columns:1.45fr 1fr; }
+.panel-heading { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.panel-heading h2 { margin:0; font-size:12px; letter-spacing:.8px; }
+.panel-heading span { color:var(--muted); font-size:9px; }
+.bars { display:flex; align-items:flex-end; gap:12px; height:150px; padding:0 8px; border-bottom:1px solid var(--border); }
+.bar-column { flex:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:7px; }
+.bar { width:100%; max-width:32px; min-height:3px; background:var(--cyan); border-radius:3px 3px 0 0; }
+.bar.critical { background:var(--red); } .bar.high { background:var(--orange); }
+.bar-value, .bar-label { color:var(--muted); font-size:9px; }
+.legend { display:flex; gap:16px; margin-top:14px; color:var(--muted); font-size:10px; }
+.legend i { width:8px; height:8px; display:inline-block; border-radius:50%; margin-right:5px; }
+.legend .critical { background:var(--red); } .legend .high { background:var(--orange); } .legend .other { background:var(--cyan); }
+.status-row { display:grid; grid-template-columns:1fr 90px 70px; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); }
+.status-row:last-child { border-bottom:0; }
+.status-name { font-weight:bold; } .status-detail { color:var(--muted); font-size:10px; margin-top:4px; }
+.progress { height:6px; background:#24354a; border-radius:4px; overflow:hidden; }
+.progress span { display:block; height:100%; background:var(--cyan); }
+.state { text-align:right; color:var(--green); font-size:9px; font-weight:bold; }
+.state.alert { color:var(--orange); }
+.bottom-grid { grid-template-columns:1fr 1fr 1fr; margin-top:14px; }
+.event-row, .action-row { display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid var(--border); }
+.event-row:last-child, .action-row:last-child { border-bottom:0; }
+.event-title { font-weight:bold; } .event-meta { color:var(--muted); font-size:10px; margin-top:4px; }
+.severity { font-size:9px; font-weight:bold; } .severity.CRITICAL { color:var(--red); } .severity.HIGH { color:var(--orange); }
+.action-state { color:var(--green); font-size:9px; font-weight:bold; } .action-state.pending { color:var(--muted); }
+footer { padding:14px 28px; color:var(--muted); font-size:9px; text-align:right; }
+@media(max-width:1050px) { .kpis { grid-template-columns:repeat(2,1fr); } .content-grid,.bottom-grid { grid-template-columns:1fr; } }
+@media(max-width:850px) { :root { --sidebar-width:65px; } main { padding:20px 14px; } .connection { display:none; } }
+@media(max-width:600px) { .kpis { grid-template-columns:repeat(2,1fr); } .page-heading { align-items:flex-start; flex-direction:column; gap:12px; } }
+@media(min-width:851px) {
+  main { padding:14px 20px 18px; }
+  .page-heading { margin-bottom:12px; }
+  .page-status { gap:5px; }
+  .grid { gap:10px; }
+  .kpis { margin-bottom:10px; }
+  .panel { padding:12px; }
+  .panel-heading { margin-bottom:10px; }
+  .bars { height:105px; }
+  .status-row { padding:8px 0; }
+  .event-row, .action-row { padding:7px 0; }
+  footer { padding:8px 20px; }
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">
+    <a class="brand-link" href="https://shinary.fr" target="_blank" rel="noopener noreferrer" aria-label="SHINARY - CYBEROPS">
+      <span class="brand-name"><span>SHINARY</span> - CYBEROPS</span>
+    </a>
+    <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Réduire le menu" aria-expanded="true">‹</button>
+  </div>
+  <div class="sidebar-content">
+    <div class="nav-section">MONITORING</div>
+    <a href="/screen/threats" class="nav-link"><span class="nav-icon">◈</span><span class="nav-text">Threat Intelligence</span><span class="nav-number">01</span></a>
+    <a href="/static/map.html" class="nav-link"><span class="nav-icon">◎</span><span class="nav-text">Carte mondiale</span><span class="nav-number">02</span></a>
+    <a href="/screen/soc" class="nav-link"><span class="nav-icon">▦</span><span class="nav-text">SOC Monitoring</span><span class="nav-number">03</span></a>
+    <a href="/screen/dashboard" class="nav-link active"><span class="nav-icon">▥</span><span class="nav-text">Operations Dashboard</span><span class="nav-number">04</span></a>
+    <div class="nav-section">GESTION DE CRISE</div>
+    <a href="/screen/crisis" class="nav-link"><span class="nav-icon">⚑</span><span class="nav-text">Crisis Management</span><span class="nav-number">05</span></a>
+    <a href="/screen/war-room" class="nav-link"><span class="nav-icon">▣</span><span class="nav-text">Table de crise</span><span class="nav-number">06</span></a>
+    <div class="nav-section">INFORMATIONS</div>
+    <a href="/screen/about" class="nav-link"><span class="nav-icon">ⓘ</span><span class="nav-text">À propos</span><span class="nav-number">07</span></a>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="sidebar-status-row"><div class="system-status"><span class="status-dot"></span><span class="status-text">SYSTEM ONLINE</span></div><a class="control-link" href="/control" title="Ouvrir le centre de contrôle">⚙ <span class="control-label">CONTROL</span></a></div>
+    <div class="sidebar-version">CYBER CRISIS ROOM · v1.0</div>
+  </div>
+</aside>
+
+<div class="shell">
+  <main>
+    <div class="page-heading">
+      <div><h1>Operations Dashboard</h1><div class="subtitle">VUE SYNTHÉTIQUE DE LA SIMULATION · DONNÉES DU SCÉNARIO</div></div>
+      <div class="page-status">
+        <div class="connection" id="connection">● API CONNECTÉE</div>
+        <div class="time-range">AUTO-REFRESH · 1,5 s</div>
+      </div>
+    </div>
+    <div class="grid kpis">
+      <div class="panel"><div class="kpi-label">Événements détectés</div><div class="kpi-value cyan" id="total">0</div><div class="kpi-meta">sur 6 étapes du scénario</div></div>
+      <div class="panel"><div class="kpi-label">Alertes critiques</div><div class="kpi-value red" id="critical">0</div><div class="kpi-meta">priorité maximale</div></div>
+      <div class="panel"><div class="kpi-label">Systèmes touchés</div><div class="kpi-value orange" id="systems">0</div><div class="kpi-meta">sources distinctes</div></div>
+      <div class="panel"><div class="kpi-label">Niveau de crise</div><div class="kpi-value purple" id="level">NORMAL</div><div class="kpi-meta" id="status">Simulation inactive</div></div>
+    </div>
+    <div class="grid content-grid">
+      <section class="panel"><div class="panel-heading"><h2>ÉVÉNEMENTS DU SCÉNARIO</h2><span id="eventCount">0 événement</span></div><div class="bars" id="bars"></div><div class="legend"><span><i class="critical"></i>Critique</span><span><i class="high"></i>Élevée</span><span><i class="other"></i>Autre</span></div></section>
+      <section class="panel"><div class="panel-heading"><h2>PROGRESSION</h2><span id="progressLabel">0 / 6</span></div><div class="kpi-value cyan" id="progressPercent">0%</div><div class="progress" style="margin:18px 0 20px"><span id="progressBar" style="width:0%"></span></div><div class="status-row"><div><div class="status-name">État du scénario</div><div class="status-detail" id="scenarioStatus">En attente du démarrage</div></div><div></div><div class="state" id="scenarioState">IDLE</div></div><div class="status-row"><div><div class="status-name">Dernier événement</div><div class="status-detail" id="lastEvent">Aucun incident détecté</div></div><div></div><div class="state alert" id="lastSeverity">—</div></div></section>
+    </div>
+    <div class="grid bottom-grid">
+      <section class="panel"><div class="panel-heading"><h2>SYSTÈMES SURVEILLÉS</h2><span>ÉTAT ACTUEL</span></div><div id="systemsList"></div></section>
+      <section class="panel"><div class="panel-heading"><h2>DERNIERS ÉVÉNEMENTS</h2><span>ACTIVITÉ RÉCENTE</span></div><div id="eventsList"></div></section>
+      <section class="panel"><div class="panel-heading"><h2>ACTIONS DE RÉPONSE</h2><span id="actionsCount">0 / 5</span></div><div id="actionsList"></div></section>
+    </div>
+  </main>
+  <footer>CYBER CRISIS ROOM · DONNÉES SIMULÉES · <a class="credit" href="https://shinary.fr" target="_blank" rel="noopener noreferrer">Designed by SHINARY - shinary.fr</a></footer>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const labels = {admin_disabled:'Compte administrateur',network_isolated:'Réseau compromis',pca_activated:'Plan de continuité',authorities_notified:'Notification autorités',backup_restore_started:'Restauration sauvegardes'};
+const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+function render(state) {
+  const events = state.events || [], impacts = state.impacts || [], actions = state.response_actions || {};
+  const decisionLabels = Object.fromEntries((state.decision_catalog || []).map(item => [item.response_key, item.label]));
+  const total = state.scenario_total || 6, step = state.current_step || 0, percent = Math.round(step / total * 100);
+  $('total').textContent = events.length; $('critical').textContent = state.critical || 0; $('systems').textContent = state.systems || 0;
+  $('level').textContent = state.crisis_level || 'NORMAL'; $('status').textContent = state.status || 'idle';
+  $('eventCount').textContent = `${events.length} événement${events.length > 1 ? 's' : ''}`; $('progressLabel').textContent = `${step} / ${total}`;
+  $('progressPercent').textContent = `${percent}%`; $('progressBar').style.width = `${percent}%`;
+  $('scenarioStatus').textContent = state.completed ? 'Scénario terminé' : state.running ? 'Exécution en cours' : state.paused ? 'Simulation en pause' : 'En attente du démarrage';
+  $('scenarioState').textContent = String(state.status || 'idle').toUpperCase();
+  $('lastEvent').textContent = state.last_event || 'Aucun incident détecté';
+  $('lastSeverity').textContent = events[0]?.severity || '—';
+  $('bars').innerHTML = events.length ? events.slice().reverse().map((event, index) => `<div class="bar-column"><span class="bar-value">${index + 1}</span><div class="bar ${String(event.severity || '').toLowerCase()}" style="height:${Math.max(14, (index + 1) / events.length * 100)}%"></div><span class="bar-label">E${index + 1}</span></div>`).join('') : '<span class="subtitle">En attente des événements...</span>';
+  $('systemsList').innerHTML = impacts.length ? impacts.map(item => `<div class="status-row"><div><div class="status-name">${escapeHTML(item.service)}</div><div class="status-detail">${escapeHTML(item.detail)}</div></div><div class="progress"><span style="width:${item.status === 'operational' ? 100 : 55}%"></span></div><div class="state ${item.status !== 'operational' ? 'alert' : ''}">${escapeHTML(item.status)}</div></div>`).join('') : '<div class="subtitle">Aucun système renseigné</div>';
+  $('eventsList').innerHTML = events.length ? events.slice(0, 4).map(event => `<div class="event-row"><div><div class="event-title">${escapeHTML(event.event)}</div><div class="event-meta">${escapeHTML(event.source)} · ${escapeHTML(event.received)}</div></div><span class="severity ${escapeHTML(event.severity)}">${escapeHTML(event.severity)}</span></div>`).join('') : '<div class="subtitle">Aucun événement</div>';
+  const entries = Object.entries(actions), done = entries.filter(([, value]) => value).length;
+  $('actionsCount').textContent = `${done} / ${entries.length || 5}`;
+  $('actionsList').innerHTML = entries.map(([key, value]) => `<div class="action-row"><span>${escapeHTML(decisionLabels[key] || labels[key] || key)}</span><span class="action-state ${value ? '' : 'pending'}">${value ? 'ACTIVÉE' : 'EN ATTENTE'}</span></div>`).join('');
+}
+async function refresh() {
+  try { const response = await fetch('/api/state', {cache:'no-store'}); if (!response.ok) throw new Error('API'); render(await response.json()); $('connection').textContent = '● API CONNECTÉE'; }
+  catch { $('connection').textContent = '● API DÉCONNECTÉE'; }
+}
+const toggle = $('sidebar-toggle');
+function setCollapsed(value) { document.body.classList.toggle('sidebar-collapsed', value); toggle.textContent = value ? '›' : '‹'; toggle.setAttribute('aria-expanded', String(!value)); localStorage.setItem('cyber-ops-sidebar-collapsed', String(value)); }
+const storedSidebarState = localStorage.getItem('cyber-ops-sidebar-collapsed');
+setCollapsed(storedSidebarState === null ? matchMedia('(max-width:850px)').matches : storedSidebarState === 'true');
+toggle.addEventListener('click', () => setCollapsed(!document.body.classList.contains('sidebar-collapsed')));
+refresh(); setInterval(refresh, 1500);
+</script>
+</body>
+</html>

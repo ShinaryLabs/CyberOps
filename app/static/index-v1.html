@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyber Crisis Room</title>
+<style>
+:root {
+ --bg:#090e18; --panel:#111b2b; --border:#24334a;
+ --text:#e5edf7; --muted:#8495ad;
+ --cyan:#38bdf8; --red:#ef4444; --orange:#f59e0b;
+ --green:#22c55e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+font-family:Arial,sans-serif}
+header{height:75px;border-bottom:1px solid var(--border);
+display:flex;align-items:center;justify-content:space-between;
+padding:0 30px}
+.brand{font-size:21px;font-weight:bold;letter-spacing:2px}
+.brand span{color:var(--cyan)}
+.status{color:var(--green);font-size:12px}
+nav{display:flex;gap:10px;padding:18px 30px}
+nav a{padding:12px 22px;text-decoration:none;color:var(--muted);
+border:1px solid var(--border);border-radius:6px;font-size:13px}
+nav a.active{background:#12304a;color:var(--cyan);border-color:var(--cyan)}
+main{padding:10px 30px 30px}
+.heading{display:flex;justify-content:space-between;align-items:center}
+h1{font-size:25px;margin:10px 0 5px}
+.subtitle{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:25px 0}
+.panel{background:var(--panel);border:1px solid var(--border);
+border-radius:8px;padding:20px}
+.metric{font-size:30px;font-weight:bold;margin:12px 0}
+.label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px}
+.layout{display:grid;grid-template-columns:2fr 1fr;gap:15px}
+h3{font-size:14px;margin:0 0 20px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:var(--muted);padding:12px 8px}
+td{padding:14px 8px;border-top:1px solid var(--border)}
+.tag{padding:5px 8px;border-radius:4px;font-size:10px;font-weight:bold}
+.CRITICAL{background:#451d28;color:#fb7185}
+.HIGH{background:#49321a;color:#fbbf24}
+.NORMAL{background:#123a2c;color:#4ade80}
+button{background:#0e7490;color:white;border:0;padding:12px 20px;
+border-radius:5px;cursor:pointer;font-weight:bold}
+button.reset{background:#344155}
+button:disabled{opacity:.5;cursor:default}
+.bar{height:9px;background:#263449;border-radius:5px;margin:12px 0}
+.bar div{height:100%;background:var(--red);border-radius:5px;width:0%}
+.item{padding:13px 0;border-bottom:1px solid var(--border);font-size:12px}
+.muted{color:var(--muted)}
+footer{padding:15px 30px;color:var(--muted);font-size:11px;
+border-top:1px solid var(--border)}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand"><span>◆</span> CYBER CRISIS ROOM</div>
+ <div class="status">● SIMULATION ENVIRONMENT &nbsp; | &nbsp; INDUSTRIA GROUP</div>
+</header>
+<nav>
+ <a href="/screen/threats" id="threats">01 THREAT INTELLIGENCE</a>
+ <a href="/screen/soc" id="soc">02 SOC MONITORING</a>
+ <a href="/screen/crisis" id="crisis">03 CRISIS MANAGEMENT</a>
+</nav>
+<main>
+ <div class="heading">
+  <div>
+   <h1 id="title">Security Operations Center</h1>
+   <div class="subtitle" id="description">Surveillance et analyse des événements de sécurité</div>
+  </div>
+  <div>
+   <button onclick="start()">▶ LANCER L'ATTAQUE</button>
+   <button class="reset" onclick="reset()">↺ RESET</button>
+  </div>
+ </div>
+ <section class="grid">
+  <div class="panel"><div class="label">Événements détectés</div><div class="metric" id="total">0</div><div class="muted">Depuis le lancement</div></div>
+  <div class="panel"><div class="label">Alertes critiques</div><div class="metric" style="color:var(--red)" id="critical">0</div><div class="muted">Priorité maximale</div></div>
+  <div class="panel"><div class="label">Systèmes concernés</div><div class="metric" id="systems">0</div><div class="muted">Infrastructure fictive</div></div>
+  <div class="panel"><div class="label">État de l'incident</div><div class="metric" id="state" style="font-size:20px;color:var(--green)">NOMINAL</div><div class="muted" id="last">Aucun incident</div></div>
+ </section>
+ <section class="layout">
+  <div class="panel">
+   <h3>FLUX DES ÉVÉNEMENTS DE SÉCURITÉ</h3>
+   <table>
+    <thead><tr><th>HEURE</th><th>SÉVÉRITÉ</th><th>SOURCE</th><th>ÉVÉNEMENT</th><th>MITRE</th></tr></thead>
+    <tbody id="events"><tr><td colspan="5" class="muted">En attente d'événements...</td></tr></tbody>
+   </table>
+  </div>
+  <div class="panel">
+   <h3>SITUATION OPÉRATIONNELLE</h3>
+   <div class="label">Progression du scénario</div>
+   <div class="bar"><div id="progress"></div></div>
+   <div class="muted" id="progressText">0 / 6 événements</div>
+   <br>
+   <h3>DERNIÈRE ACTIVITÉ</h3>
+   <div id="activity"><div class="item muted">Aucune activité détectée</div></div>
+   <br>
+   <h3>ENVIRONNEMENT</h3>
+   <div class="item">Organisation : INDUSTRIA GROUP</div>
+   <div class="item">Sites : Bordeaux · Lyon · Paris</div>
+   <div class="item">Classification : EXERCICE</div>
+  </div>
+ </section>
+</main>
+<footer>CYBER CRISIS ROOM · TRAINING ENVIRONMENT · ALL INCIDENTS ARE SIMULATED</footer>
+<script>
+const page=location.pathname.split("/").pop();
+const configs={
+ soc:["Security Operations Center","Surveillance et analyse des événements de sécurité"],
+ threats:["Global Threat Intelligence","Contexte mondial des menaces cyber"],
+ crisis:["Cyber Crisis Management","Pilotage opérationnel et gestion des impacts"]
+};
+const config=configs[page]||configs.soc;
+document.getElementById("title").textContent=config[0];
+document.getElementById("description").textContent=config[1];
+document.getElementById(page)?.classList.add("active");
+
+async function refresh(){
+ const s=await fetch("/api/state").then(r=>r.json());
+ document.getElementById("total").textContent=s.total;
+ document.getElementById("critical").textContent=s.critical;
+ document.getElementById("systems").textContent=s.systems;
+ document.getElementById("state").textContent=s.running?"INCIDENT EN COURS":s.total?"SCÉNARIO TERMINÉ":"NOMINAL";
+ document.getElementById("state").style.color=s.total?"var(--red)":"var(--green)";
+ document.getElementById("last").textContent=s.last_event;
+ document.getElementById("progress").style.width=(s.total/6*100)+"%";
+ document.getElementById("progressText").textContent=s.total+" / 6 événements";
+ document.getElementById("events").innerHTML=s.events.length?s.events.map(e=>
+ `<tr><td>${e.received}</td><td><span class="tag ${e.severity}">${e.severity}</span></td><td>${e.source}</td><td>${e.event}</td><td>${e.technique}</td></tr>`
+ ).join(""):'<tr><td colspan="5" class="muted">En attente d’événements...</td></tr>';
+ document.getElementById("activity").innerHTML=s.events.length?s.events.slice(0,3).map(e=>
+ `<div class="item"><b>${e.received}</b> — ${e.event}</div>`).join(""):'<div class="item muted">Aucune activité détectée</div>';
+}
+async function start(){await fetch("/api/start",{method:"POST"});refresh()}
+async function reset(){await fetch("/api/reset",{method:"POST"});refresh()}
+setInterval(refresh,1500);
+refresh();
+</script>
+</body>
+</html>

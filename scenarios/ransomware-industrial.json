@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "id": "ransomware-industrial",
+  "name": "Ransomware industriel",
+  "version": "1.0",
+  "entity": "INDUSTRIA GROUP",
+  "description": "Scénario de démonstration d'une attaque par ransomware affectant progressivement un système industriel.",
+  "step_delay": 8,
+  "events": [
+    {
+      "time": "09:17:04",
+      "severity": "CRITICAL",
+      "source": "AD-DC01",
+      "event": "Compromission compte administrateur",
+      "technique": "T1078",
+      "type": "Initial Access"
+    },
+    {
+      "time": "09:21:18",
+      "severity": "HIGH",
+      "source": "WS-FINANCE-04",
+      "event": "Execution PowerShell suspecte",
+      "technique": "T1059.001",
+      "type": "Execution"
+    },
+    {
+      "time": "09:26:32",
+      "severity": "HIGH",
+      "source": "SRV-FILE01",
+      "event": "Deplacement lateral via SMB",
+      "technique": "T1021.002",
+      "type": "Lateral Movement"
+    },
+    {
+      "time": "09:31:45",
+      "severity": "CRITICAL",
+      "source": "SRV-ERP01",
+      "event": "Exfiltration de donnees suspectee",
+      "technique": "T1041",
+      "type": "Exfiltration"
+    },
+    {
+      "time": "09:38:12",
+      "severity": "CRITICAL",
+      "source": "SRV-FILE02",
+      "event": "Chiffrement de fichiers detecte",
+      "technique": "T1486",
+      "type": "Impact"
+    },
+    {
+      "time": "09:42:00",
+      "severity": "CRITICAL",
+      "source": "SOC",
+      "event": "Activation de la cellule de crise",
+      "technique": "IR",
+      "type": "Response"
+    }
+  ],
+  "impacts": [
+    {
+      "id": "identity",
+      "service": "Active Directory",
+      "site": "Tous les sites",
+      "status": "operational",
+      "detail": "Aucune perturbation confirmée"
+    },
+    {
+      "id": "finance",
+      "service": "Postes financiers",
+      "site": "Bordeaux",
+      "status": "operational",
+      "detail": "Service opérationnel"
+    },
+    {
+      "id": "files",
+      "service": "Serveurs de fichiers",
+      "site": "Bordeaux",
+      "status": "operational",
+      "detail": "Partages accessibles"
+    },
+    {
+      "id": "erp",
+      "service": "ERP",
+      "site": "Lyon",
+      "status": "operational",
+      "detail": "Application opérationnelle"
+    },
+    {
+      "id": "production",
+      "service": "Production industrielle",
+      "site": "Lyon",
+      "status": "operational",
+      "detail": "Production nominale"
+    }
+  ],
+  "impact_updates": [
+    {
+      "step": 1,
+      "impact_id": "identity",
+      "status": "investigation",
+      "detail": "Compte administrateur suspect identifié"
+    },
+    {
+      "step": 2,
+      "impact_id": "finance",
+      "status": "degraded",
+      "detail": "Poste financier suspect détecté"
+    },
+    {
+      "step": 3,
+      "impact_id": "files",
+      "status": "degraded",
+      "detail": "Déplacement latéral détecté sur les serveurs"
+    },
+    {
+      "step": 4,
+      "impact_id": "erp",
+      "status": "critical",
+      "detail": "Exfiltration de données suspectée"
+    },
+    {
+      "step": 5,
+      "impact_id": "files",
+      "status": "unavailable",
+      "detail": "Chiffrement des fichiers détecté"
+    },
+    {
+      "step": 5,
+      "impact_id": "production",
+      "status": "degraded",
+      "detail": "Production potentiellement perturbée"
+    },
+    {
+      "step": 1,
+      "when_action": "disable_admin",
+      "impact_id": "identity",
+      "status": "contained",
+      "detail": "Compte administrateur désactivé par la cellule de crise"
+    },
+    {
+      "step": 3,
+      "when_action": "isolate_network",
+      "impact_id": "files",
+      "status": "contained",
+      "detail": "Mouvement latéral détecté, propagation limitée par l'isolement réseau"
+    },
+    {
+      "step": 4,
+      "when_action": "isolate_network",
+      "impact_id": "erp",
+      "status": "degraded",
+      "detail": "Tentative d'exfiltration détectée, flux réseau isolés"
+    },
+    {
+      "step": 5,
+      "when_action": "restore_backup",
+      "impact_id": "files",
+      "status": "recovering",
+      "detail": "Restauration des sauvegardes engagée"
+    },
+    {
+      "step": 5,
+      "when_action": "activate_pca",
+      "impact_id": "production",
+      "status": "degraded",
+      "detail": "PCA activé : production maintenue en mode dégradé"
+    }
+  ],
+  "decisions": {
+    "disable_admin": {
+      "label": "Désactiver le compte administrateur compromis",
+      "response_key": "admin_disabled",
+      "consequence": "Le compte compromis est désactivé.",
+      "impact_updates": [
+        {
+          "impact_id": "identity",
+          "status": "contained",
+          "detail": "Compte administrateur désactivé par la cellule de crise"
+        }
+      ]
+    },
+    "isolate_network": {
+      "label": "Isoler les systèmes compromis du réseau",
+      "response_key": "network_isolated",
+      "consequence": "Les mesures de confinement réseau sont activées.",
+      "impact_updates": [
+        {
+          "impact_id": "files",
+          "status": "contained",
+          "detail": "Isolement réseau demandé par la cellule de crise"
+        }
+      ]
+    },
+    "activate_pca": {
+      "label": "Activer le plan de continuité d'activité",
+      "response_key": "pca_activated",
+      "consequence": "Le plan de continuité d'activité est activé.",
+      "impact_updates": [
+        {
+          "impact_id": "production",
+          "status": "degraded",
+          "detail": "PCA activé : continuité de la production en mode dégradé"
+        }
+      ]
+    },
+    "notify_authorities": {
+      "label": "Préparer la notification aux autorités",
+      "response_key": "authorities_notified",
+      "consequence": "La préparation de la notification aux autorités est enregistrée."
+    },
+    "restore_backup": {
+      "label": "Lancer la procédure de restauration des sauvegardes",
+      "response_key": "backup_restore_started",
+      "consequence": "La procédure de restauration est demandée.",
+      "min_step": 5,
+      "impact_updates": [
+        {
+          "min_step": 5,
+          "impact_id": "files",
+          "status": "recovering",
+          "detail": "Restauration des sauvegardes engagée"
+        }
+      ]
+    }
+  },
+  "event_overrides": [
+    {
+      "step": 4,
+      "when_action": "isolate_network",
+      "event": {
+        "severity": "HIGH",
+        "event": "Tentative d'exfiltration bloquée par l'isolation réseau",
+        "type": "Containment"
+      }
+    },
+    {
+      "step": 5,
+      "when_action": "isolate_network",
+      "event": {
+        "severity": "HIGH",
+        "event": "Chiffrement détecté sur un périmètre isolé",
+        "type": "Impact limité"
+      }
+    }
+  ]
+}

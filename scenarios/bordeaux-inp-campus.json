@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "id": "bordeaux-inp-campus",
+  "name": "Bordeaux INP — Crise numérique campus",
+  "version": "1.0",
+  "entity": "BORDEAUX INP",
+  "description": "Scénario fictif de simulation d'une crise cyber touchant les services numériques, la pédagogie, les admissions et la recherche de Bordeaux INP.",
+  "step_delay": 7,
+  "events": [
+    {
+      "time": "08:14:22",
+      "severity": "HIGH",
+      "source": "ENT-BORDEAUX-INP",
+      "event": "Connexion anormale sur un compte étudiant",
+      "technique": "T1078",
+      "type": "Valid Accounts"
+    },
+    {
+      "time": "08:21:09",
+      "severity": "HIGH",
+      "source": "MOODLE-CAMPUS",
+      "event": "Jeton d'accès pédagogique utilisé depuis une adresse inhabituelle",
+      "technique": "T1528",
+      "type": "Credential Access"
+    },
+    {
+      "time": "08:29:41",
+      "severity": "CRITICAL",
+      "source": "STOCKAGE-RECHERCHE",
+      "event": "Lecture massive de documents de recherche",
+      "technique": "T1530",
+      "type": "Collection"
+    },
+    {
+      "time": "08:37:16",
+      "severity": "HIGH",
+      "source": "ADMISSIONS",
+      "event": "Export inhabituel de dossiers de candidature",
+      "technique": "T1567",
+      "type": "Exfiltration"
+    },
+    {
+      "time": "08:45:03",
+      "severity": "HIGH",
+      "source": "POSTE-LABORATOIRE",
+      "event": "Mouvement latéral depuis un poste de laboratoire",
+      "technique": "T1021.001",
+      "type": "Lateral Movement"
+    },
+    {
+      "time": "08:53:48",
+      "severity": "CRITICAL",
+      "source": "SERVEUR-FICHIERS",
+      "event": "Chiffrement de documents administratifs détecté",
+      "technique": "T1486",
+      "type": "Impact"
+    },
+    {
+      "time": "09:00:00",
+      "severity": "CRITICAL",
+      "source": "CELLULE-DE-CRISE",
+      "event": "Activation de la cellule de crise Bordeaux INP",
+      "technique": "IR",
+      "type": "Response"
+    }
+  ],
+  "impacts": [
+    {
+      "id": "identity",
+      "service": "Comptes ENT et identités",
+      "site": "Campus Bordeaux INP",
+      "status": "operational",
+      "detail": "Authentification disponible"
+    },
+    {
+      "id": "teaching",
+      "service": "Plateforme pédagogique",
+      "site": "Campus Bordeaux INP",
+      "status": "operational",
+      "detail": "Cours et ressources accessibles"
+    },
+    {
+      "id": "admissions",
+      "service": "Admissions et candidatures",
+      "site": "Bordeaux INP",
+      "status": "operational",
+      "detail": "Dossiers accessibles aux équipes habilitées"
+    },
+    {
+      "id": "research",
+      "service": "Stockage de la recherche",
+      "site": "Laboratoires",
+      "status": "operational",
+      "detail": "Données scientifiques disponibles"
+    },
+    {
+      "id": "administration",
+      "service": "Services administratifs",
+      "site": "Bordeaux INP",
+      "status": "operational",
+      "detail": "Activité administrative nominale"
+    },
+    {
+      "id": "students",
+      "service": "Services aux étudiants",
+      "site": "Campus Bordeaux INP",
+      "status": "operational",
+      "detail": "Communication et services numériques disponibles"
+    }
+  ],
+  "impact_updates": [
+    {
+      "step": 1,
+      "impact_id": "identity",
+      "status": "investigation",
+      "detail": "Compte étudiant compromis en cours d'analyse"
+    },
+    {
+      "step": 2,
+      "impact_id": "teaching",
+      "status": "degraded",
+      "detail": "Accès à certaines ressources pédagogiques sous surveillance"
+    },
+    {
+      "step": 3,
+      "impact_id": "research",
+      "status": "critical",
+      "detail": "Lecture massive de données scientifiques détectée"
+    },
+    {
+      "step": 4,
+      "impact_id": "admissions",
+      "status": "degraded",
+      "detail": "Traitement des candidatures suspendu pour vérification"
+    },
+    {
+      "step": 5,
+      "impact_id": "research",
+      "status": "critical",
+      "detail": "Propagation potentielle depuis un poste de laboratoire"
+    },
+    {
+      "step": 6,
+      "impact_id": "administration",
+      "status": "unavailable",
+      "detail": "Documents administratifs chiffrés"
+    },
+    {
+      "step": 6,
+      "impact_id": "students",
+      "status": "degraded",
+      "detail": "Accès à plusieurs services étudiants perturbé"
+    },
+    {
+      "step": 1,
+      "when_action": "disable_student_account",
+      "impact_id": "identity",
+      "status": "contained",
+      "detail": "Compte compromis désactivé et sessions révoquées"
+    },
+    {
+      "step": 3,
+      "when_action": "isolate_research_network",
+      "impact_id": "research",
+      "status": "contained",
+      "detail": "Réseau des laboratoires isolé pour limiter la propagation"
+    },
+    {
+      "step": 4,
+      "when_action": "protect_admissions",
+      "impact_id": "admissions",
+      "status": "contained",
+      "detail": "Accès aux dossiers de candidature restreint"
+    },
+    {
+      "step": 6,
+      "when_action": "activate_teaching_continuity",
+      "impact_id": "teaching",
+      "status": "degraded",
+      "detail": "Continuité pédagogique activée avec des modalités dégradées"
+    },
+    {
+      "step": 6,
+      "when_action": "restore_administrative_backup",
+      "impact_id": "administration",
+      "status": "recovering",
+      "detail": "Restauration des documents administratifs engagée"
+    }
+  ],
+  "decisions": {
+    "disable_student_account": {
+      "label": "Désactiver le compte compromis",
+      "response_key": "student_account_disabled",
+      "consequence": "Le compte compromis est désactivé et ses sessions sont révoquées.",
+      "impact_updates": [
+        {
+          "impact_id": "identity",
+          "status": "contained",
+          "detail": "Compte compromis désactivé et sessions révoquées"
+        }
+      ]
+    },
+    "isolate_research_network": {
+      "label": "Isoler le réseau des laboratoires",
+      "response_key": "research_network_isolated",
+      "consequence": "Le réseau des laboratoires est isolé pour protéger les données de recherche.",
+      "impact_updates": [
+        {
+          "impact_id": "research",
+          "status": "contained",
+          "detail": "Réseau des laboratoires isolé pour limiter la propagation"
+        }
+      ]
+    },
+    "protect_admissions": {
+      "label": "Protéger les dossiers de candidature",
+      "response_key": "admissions_protected",
+      "consequence": "Les accès aux dossiers de candidature sont restreints.",
+      "impact_updates": [
+        {
+          "impact_id": "admissions",
+          "status": "contained",
+          "detail": "Accès aux dossiers de candidature restreint"
+        }
+      ]
+    },
+    "activate_teaching_continuity": {
+      "label": "Activer la continuité pédagogique",
+      "response_key": "teaching_continuity_activated",
+      "consequence": "Des modalités pédagogiques dégradées sont activées.",
+      "impact_updates": [
+        {
+          "impact_id": "teaching",
+          "status": "degraded",
+          "detail": "Continuité pédagogique activée avec des modalités dégradées"
+        }
+      ]
+    },
+    "notify_data_protection": {
+      "label": "Préparer la notification données personnelles",
+      "response_key": "data_protection_notified",
+      "consequence": "L'analyse de l'impact sur les données personnelles est lancée.",
+      "impact_updates": []
+    },
+    "restore_administrative_backup": {
+      "label": "Restaurer les documents administratifs",
+      "response_key": "administrative_backup_restored",
+      "consequence": "La restauration des documents administratifs est engagée.",
+      "impact_updates": [
+        {
+          "min_step": 6,
+          "impact_id": "administration",
+          "status": "recovering",
+          "detail": "Restauration des documents administratifs engagée"
+        }
+      ]
+    }
+  },
+  "event_overrides": [
+    {
+      "step": 3,
+      "when_action": "isolate_research_network",
+      "event": {
+        "severity": "HIGH",
+        "event": "Lecture de données de recherche limitée par l'isolement",
+        "type": "Containment"
+      }
+    },
+    {
+      "step": 4,
+      "when_action": "protect_admissions",
+      "event": {
+        "severity": "MEDIUM",
+        "event": "Export de candidatures bloqué par le contrôle d'accès",
+        "type": "Containment"
+      }
+    },
+    {
+      "step": 6,
+      "when_action": "restore_administrative_backup",
+      "event": {
+        "severity": "HIGH",
+        "event": "Restauration des documents administratifs lancée",
+        "type": "Recovery"
+      }
+    }
+  ]
+}

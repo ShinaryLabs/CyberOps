@@ -8,6 +8,9 @@ from pathlib import Path
 import asyncio
 import json
 import re
+import time
+import urllib.request
+import xml.etree.ElementTree as ET
 
 app = FastAPI(title="Cyber Crisis Room")
 
@@ -66,6 +69,14 @@ simulation_task = None
 timeline_counter = 0
 
 STEP_DELAY = 8
+CERT_FR_FEED_URL = "https://cert.cyber.gouv.fr/feed/"
+cert_feed_cache = {
+    "status": "unknown",
+    "items": [],
+    "updated_at": None,
+    "error": None
+}
+CERT_FEED_CACHE_TTL = 600
 
 
 def validate_scenario(data):
@@ -251,6 +262,51 @@ def set_active_scenario(scenario):
 class DecisionRequest(BaseModel):
     action: str
     actor: str = "Cellule de crise"
+
+
+def fetch_cert_fr_feed():
+    """Récupère les dernières publications publiques du flux RSS CERT-FR."""
+    global cert_feed_cache
+
+    now = time.time()
+    if (
+        cert_feed_cache["updated_at"]
+        and now - cert_feed_cache["updated_at"] < CERT_FEED_CACHE_TTL
+    ):
+        return cert_feed_cache
+
+    try:
+        request = urllib.request.Request(
+            CERT_FR_FEED_URL,
+            headers={"User-Agent": "Cyber-Crisis-Room/1.0"}
+        )
+        with urllib.request.urlopen(request, timeout=8) as response:
+            root = ET.fromstring(response.read())
+
+        items = []
+        for item in root.findall("./channel/item")[:5]:
+            items.append({
+                "title": item.findtext("title", default="Publication CERT-FR"),
+                "link": item.findtext("link", default=CERT_FR_FEED_URL),
+                "published": item.findtext("pubDate", default=""),
+                "description": item.findtext("description", default="")
+            })
+
+        cert_feed_cache = {
+            "status": "connected",
+            "items": items,
+            "updated_at": now,
+            "error": None
+        }
+    except (OSError, ET.ParseError, ValueError) as error:
+        cert_feed_cache = {
+            "status": "unavailable",
+            "items": [],
+            "updated_at": now,
+            "error": str(error)
+        }
+
+    return cert_feed_cache
 
 
 # ============================================================
@@ -529,6 +585,19 @@ async def screen(screen: str):
         return FileResponse(BASE / "static" / "crisis.html")
 
     return FileResponse(BASE / "static" / "index.html")
+
+
+@app.get("/api/threat-feeds/cert-fr")
+async def cert_fr_feed():
+    feed = await asyncio.to_thread(fetch_cert_fr_feed)
+    return {
+        "source": "CERT-FR / ANSSI",
+        "url": CERT_FR_FEED_URL,
+        "status": feed["status"],
+        "items": feed["items"],
+        "updated_at": feed["updated_at"],
+        "error": "Flux indisponible" if feed["error"] else None
+    }
 
 
 @app.get("/control")

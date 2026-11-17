@@ -602,6 +602,11 @@ footer {
   white-space:nowrap;
 }
 
+.source-status.connected { color:var(--green); }
+.source-status.connected .source-dot { background:var(--green); }
+.source-status.unavailable { color:var(--red); }
+.source-status.unavailable .source-dot { background:var(--red); }
+
 .source-dot {
   display:inline-block;
   width:7px;
@@ -609,6 +614,66 @@ footer {
   border-radius:50%;
   background:var(--orange);
   margin-right:6px;
+}
+
+.feed-selector {
+  margin:16px 0 10px;
+}
+
+.feed-selector label {
+  display:block;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:bold;
+  letter-spacing:.6px;
+  margin-bottom:6px;
+}
+
+.feed-selector select {
+  width:100%;
+  padding:9px 10px;
+  border:1px solid var(--border);
+  border-radius:5px;
+  background:var(--panel2);
+  color:var(--text);
+  font:inherit;
+}
+
+.feed-panel {
+  padding:12px;
+}
+
+.feed-panel .source-row {
+  padding:8px 0;
+  font-size:10px;
+}
+
+.feed-panel .feed-selector {
+  margin:10px 0 8px;
+}
+
+.feed-panel .threat-event {
+  padding:7px 0;
+  font-size:10px;
+  line-height:1.35;
+}
+
+.feed-panel .threat-event a {
+  display:block;
+  color:var(--cyan);
+  font-weight:bold;
+  line-height:1.35;
+  text-decoration:none;
+}
+
+.feed-panel .threat-event a:hover {
+  color:#bae6fd;
+  text-decoration:underline;
+}
+
+.feed-panel .threat-event-meta {
+  font-size:8px;
+  margin-top:3px;
 }
 
 .threat-event {
@@ -921,6 +986,7 @@ td {
       </div>
       <div class="sidebar-version">CYBER CRISIS ROOM · v1.0</div>
     </div>
+
   </div>
 
 </aside>
@@ -1106,8 +1172,8 @@ function renderThreats() {
 
       <div class="kpi">
         <div class="label">Sources connectées</div>
-        <div class="metric orange">0 / 4</div>
-        <div class="kpi-description">Flux externes à connecter</div>
+        <div class="metric orange" id="ti-sources">1 / 4</div>
+        <div class="kpi-description">Flux CERT-FR actif</div>
       </div>
     </div>
 
@@ -1137,7 +1203,7 @@ function renderThreats() {
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel feed-panel">
         <div class="panel-title">
           <h3>THREAT INTELLIGENCE FEEDS</h3>
           <span class="label">ÉTAT DES CONNEXIONS</span>
@@ -1145,7 +1211,9 @@ function renderThreats() {
 
         <div class="source-row">
           <span>🇫🇷 CERT-FR / ANSSI</span>
-          <span class="source-status"><i class="source-dot"></i>À CONNECTER</span>
+          <span class="source-status" id="cert-feed-status">
+            <i class="source-dot"></i>CHARGEMENT
+          </span>
         </div>
 
         <div class="source-row">
@@ -1161,6 +1229,21 @@ function renderThreats() {
         <div class="source-row">
           <span>🇺🇸 CISA KEV</span>
           <span class="source-status"><i class="source-dot"></i>À CONNECTER</span>
+        </div>
+
+        <div class="feed-selector">
+          <label for="threat-feed-select">CONSULTER UN FLUX</label>
+          <select id="threat-feed-select">
+            <option value="cert-fr">🇫🇷 CERT-FR / ANSSI</option>
+            <option value="threatfox" disabled>🌐 ThreatFox — bientôt disponible</option>
+            <option value="urlhaus" disabled>🌐 URLhaus — bientôt disponible</option>
+            <option value="cisa-kev" disabled>🇺🇸 CISA KEV — bientôt disponible</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="label" id="selected-feed-title">DERNIÈRES PUBLICATIONS CERT-FR</div>
+          <div id="cert-feed-items" class="empty">Chargement du flux officiel...</div>
         </div>
 
         <div style="margin-top:25px">
@@ -1364,10 +1447,52 @@ function renderCrisis() {
     `).join("");
 }
 
+async function refreshCertFeed() {
+  const statusElement = document.getElementById("cert-feed-status");
+  const itemsElement = document.getElementById("cert-feed-items");
+  const sourcesElement = document.getElementById("ti-sources");
+
+  try {
+    const feed = await api("/api/threat-feeds/cert-fr");
+    const connected = feed.status === "connected";
+    statusElement.className = "source-status " +
+      (connected ? "connected" : "unavailable");
+    statusElement.innerHTML =
+      `<i class="source-dot"></i>${connected ? "CONNECTÉ" : "INDISPONIBLE"}`;
+    sourcesElement.textContent = connected ? "1 / 4" : "0 / 4";
+
+    itemsElement.innerHTML = feed.items.length
+      ? feed.items.map(item => `
+        <div class="threat-event">
+          <a href="${escapeHTML(item.link)}" target="_blank"
+             rel="noopener noreferrer">${escapeHTML(item.title)}</a>
+          <div class="threat-event-meta">${escapeHTML(item.published)}</div>
+        </div>
+      `).join("")
+      : `<div class="empty">${escapeHTML(feed.error || "Aucune publication disponible")}</div>`;
+  } catch (error) {
+    statusElement.className = "source-status unavailable";
+    statusElement.innerHTML = '<i class="source-dot"></i>INDISPONIBLE';
+    sourcesElement.textContent = "0 / 4";
+    itemsElement.innerHTML =
+      '<div class="empty">Flux CERT-FR indisponible.</div>';
+  }
+}
+
+document.getElementById("threat-feed-select")?.addEventListener("change", event => {
+  if (event.target.value === "cert-fr") {
+    document.getElementById("selected-feed-title").textContent =
+      "DERNIÈRES PUBLICATIONS CERT-FR";
+    refreshCertFeed();
+  }
+});
+
 /* RENDER PAGE */
 
 if (page === "threats") {
   renderThreats();
+  refreshCertFeed();
+  setInterval(refreshCertFeed, 600000);
 } else if (page === "crisis") {
   renderCrisis();
 } else {

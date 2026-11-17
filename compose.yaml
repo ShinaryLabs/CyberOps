@@ -1,0 +1,11 @@
+services:
+  cyber-ops:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: shinary/cyber-crisis-room:latest
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./scenarios:/app/scenarios
+    restart: unless-stopped

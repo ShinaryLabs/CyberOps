@@ -66,6 +66,7 @@ L'application repose sur une architecture légère composée d'un backend Python
 | Frontend | HTML5 / CSS3 / JavaScript |
 | API | REST / JSON |
 | Visualisation cartographique | Page HTML dédiée |
+| Conteneurisation | Docker / Compose |
 | Environnement | Kali Linux |
 | Exécution | Environnement virtuel Python |
 
@@ -129,10 +130,45 @@ source .venv/bin/activate
 ### Installation des dépendances
 
 ```bash
-pip install fastapi uvicorn
+pip install -r requirements.txt
 ```
 
-## 5. Démarrage de l'application
+## 5. Démarrage avec Docker
+
+### Construire l'image
+
+Depuis la racine du projet :
+
+```bash
+docker build -t shinary/cyber-crisis-room:latest .
+```
+
+### Lancer le conteneur
+
+```bash
+docker run --rm -p 8090:8090 \
+  -v "$PWD/scenarios:/app/scenarios" \
+  shinary/cyber-crisis-room:latest
+```
+
+L'application est accessible sur <http://localhost:8090>.
+Le volume conserve les scénarios importés depuis le centre de contrôle.
+
+### Utiliser Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Arrêter le service :
+
+```bash
+docker compose down
+```
+
+Le fichier `compose.yaml` publie le port 8090 et monte le dossier `scenarios/`.
+
+## 6. Démarrage local sans Docker
 
 Depuis la racine du projet :
 
@@ -149,7 +185,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8090 --reload
 
 Le serveur est alors accessible sur le port TCP 8090.
 
-## 6. Scénarios de simulation
+## 7. Scénarios de simulation
 
 Les scénarios sont stockés sous forme de fichiers JSON dans le dossier `scenarios/`.
 Le fichier `scenarios/ransomware-industrial.json` est chargé par défaut. Un scénario

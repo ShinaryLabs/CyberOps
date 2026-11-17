@@ -20,6 +20,9 @@ h2{font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#9db0ca;marg
 .scenario-toolbar button{cursor:pointer}
 .scenario-toolbar button:hover{border-color:#38bdf8}
 .scenario-help{color:#8191a9;font-size:12px;margin-top:12px}
+.speed-control{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.speed-control select{background:#0b1422;color:#e8eef8;border:1px solid #26344a;border-radius:6px;padding:11px 13px;min-width:180px}
+.speed-help{color:#8191a9;font-size:12px}
 button{border:0;border-radius:6px;padding:13px 22px;font-weight:bold;cursor:pointer;color:white}
 button:disabled{opacity:.35;cursor:not-allowed}
 .start{background:#087c63}.pause{background:#b7791f}.resume{background:#2563a6}.reset{background:#9b3443}
@@ -73,6 +76,21 @@ footer{color:#65758c;text-align:center;padding:25px;font-size:11px}
       <button class="pause" id="pause">Ⅱ PAUSE</button>
       <button class="resume" id="resume">▶ REPRENDRE</button>
       <button class="reset" id="reset">↺ RÉINITIALISER</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Vitesse de déroulement</h2>
+    <div class="speed-control">
+      <select id="speedSelect" aria-label="Régler la vitesse du scénario">
+        <option value="0.1">×0,1 — dix fois plus lent</option>
+        <option value="0.5">×0,5 — deux fois plus lent</option>
+        <option value="1">×1 — temps réel</option>
+        <option value="2">×2 — deux fois plus vite</option>
+        <option value="5">×5 — cinq fois plus vite</option>
+        <option value="10">×10 — dix fois plus vite</option>
+      </select>
+      <span class="speed-help" id="speedDescription">×1 — temps réel</span>
     </div>
   </section>
 
@@ -171,6 +189,23 @@ async function command(action) {
   }
 }
 
+async function setSpeed(factor) {
+  try {
+    const response = await fetch('/api/speed', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({factor:Number(factor)})
+    });
+    const data = await response.json();
+    if (!response.ok || data.status !== 'updated') {
+      throw new Error(data.message || 'Vitesse invalide');
+    }
+    await refresh();
+  } catch(e) {
+    alert('Impossible de modifier la vitesse : ' + e.message);
+  }
+}
+
 $('start').onclick = () => command('start');
 $('pause').onclick = () => command('pause');
 $('resume').onclick = () => command('resume');
@@ -183,6 +218,7 @@ $('scenarioFile').onchange = event => {
   event.target.value = '';
 };
 $('exportScenario').onclick = () => exportScenario().catch(error => alert(error.message));
+$('speedSelect').onchange = event => setSpeed(event.target.value);
 
 function render(data) {
   const status = data.status || (data.running ? 'running' : 'idle');
@@ -212,6 +248,12 @@ function render(data) {
   $('step').textContent = current + '/' + steps;
   $('percent').textContent = percent + ' %';
   $('bar').style.width = percent + '%';
+  const speed = Number(data.speed_multiplier || 1);
+  $('speedSelect').value = String(speed);
+  $('speedDescription').textContent =
+    '×' + String(speed).replace('.', ',') +
+    (speed === 1 ? ' — temps réel' : ' — délai effectif : ' +
+      Number(data.step_delay || 0).toFixed(1).replace('.', ',') + ' s');
 
   // Impacts métier
   const impacts = data.impacts || [];

@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from pathlib import Path
 import asyncio
 import json
+import math
 import re
 import time
 import urllib.request
@@ -69,6 +70,8 @@ simulation_task = None
 timeline_counter = 0
 
 STEP_DELAY = 8
+NOMINAL_STEP_DELAY = STEP_DELAY
+speed_multiplier = 1.0
 CERT_FR_FEED_URL = "https://cert.cyber.gouv.fr/feed/"
 cert_feed_cache = {
     "status": "unknown",
@@ -167,6 +170,7 @@ DEFAULT_SCENARIO = load_scenario_file(SCENARIOS_DIR / "ransomware-industrial.jso
 current_scenario = DEFAULT_SCENARIO
 SCENARIO = current_scenario["events"]
 STEP_DELAY = current_scenario["step_delay"]
+NOMINAL_STEP_DELAY = STEP_DELAY
 
 
 # ============================================================
@@ -240,12 +244,13 @@ response_actions = {
 
 
 def set_active_scenario(scenario):
-    global current_scenario, SCENARIO, STEP_DELAY
+    global current_scenario, SCENARIO, NOMINAL_STEP_DELAY
     global INITIAL_IMPACTS, DECISION_DEFINITIONS, DECISION_CATALOG
 
     current_scenario = scenario
     SCENARIO = current_scenario["events"]
-    STEP_DELAY = current_scenario["step_delay"]
+    NOMINAL_STEP_DELAY = current_scenario["step_delay"]
+    set_speed_multiplier(1.0)
     INITIAL_IMPACTS = current_scenario["impacts"]
     DECISION_DEFINITIONS = current_scenario["decisions"]
     DECISION_CATALOG = {
@@ -262,6 +267,17 @@ def set_active_scenario(scenario):
 class DecisionRequest(BaseModel):
     action: str
     actor: str = "Cellule de crise"
+
+
+class SpeedRequest(BaseModel):
+    factor: float
+
+
+def set_speed_multiplier(factor):
+    global speed_multiplier, STEP_DELAY
+
+    speed_multiplier = factor
+    STEP_DELAY = NOMINAL_STEP_DELAY / factor
 
 
 def fetch_cert_fr_feed():
@@ -728,6 +744,9 @@ async def state():
         "start_time": start_time.isoformat() if start_time else None,
         "current_step": current_step,
         "scenario_total": len(SCENARIO),
+        "speed_multiplier": speed_multiplier,
+        "step_delay": STEP_DELAY,
+        "nominal_step_delay": NOMINAL_STEP_DELAY,
         "events": events,
         "timeline": timeline,
         "timeline_total": len(timeline),
@@ -790,6 +809,26 @@ async def get_timeline(limit: int = 200):
 # ============================================================
 # API : CONTROLES DE SIMULATION
 # ============================================================
+
+@app.post("/api/speed")
+async def set_simulation_speed(request: SpeedRequest):
+    if (
+        not math.isfinite(request.factor)
+        or request.factor < 0.1
+        or request.factor > 10
+    ):
+        return {
+            "status": "error",
+            "message": "La vitesse doit être comprise entre x0.1 et x10."
+        }
+
+    set_speed_multiplier(request.factor)
+    return {
+        "status": "updated",
+        "speed_multiplier": speed_multiplier,
+        "step_delay": STEP_DELAY
+    }
+
 
 @app.post("/api/start")
 async def start():
